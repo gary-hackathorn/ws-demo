@@ -81,7 +81,7 @@ public class EventControllerTest {
         }).get(1, SECONDS);
 
         stompSession.subscribe(EVENT_ENDPOINT, new CreateStompFrameHandler());
-        stompSession.send(EVENT_ENDPOINT, event);
+        //stompSession.send(EVENT_ENDPOINT, event);
         ReaccomEvent reaccomEvent = completableFuture.get(10, SECONDS);
         System.out.println(reaccomEvent);
         assertNotNull(reaccomEvent);
