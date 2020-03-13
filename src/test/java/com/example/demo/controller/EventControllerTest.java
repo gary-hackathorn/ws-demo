@@ -50,24 +50,23 @@ public class EventControllerTest {
     private static final String EVENT_ENDPOINT = "/topic/event/";
     private CompletableFuture<ReaccomEvent> completableFuture;
 
-//    @Autowired
-//    private WebApplicationContext wac;
+    @Autowired
+    private WebApplicationContext wac;
 
     private MockMvc mockMvc;
 
     @Before
     public void setup() throws Exception {
-//        this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
-//        port = 8080;
+        this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
         URL = "ws://localhost:" + port + "/event";
         completableFuture = new CompletableFuture<>();
     }
 
     @Test
     public void testGetEndpoint() throws Exception {
-//        MvcResult mvcResult = this.mockMvc.perform(get("/event")).andReturn();
-//        assertEquals(200, mvcResult.getResponse().getStatus());
-//        assertEquals("hello gary", mvcResult.getResponse().getContentAsString());
+        MvcResult mvcResult = this.mockMvc.perform(get("/event")).andReturn();
+        assertEquals(200, mvcResult.getResponse().getStatus());
+        assertEquals("hello gary", mvcResult.getResponse().getContentAsString());
 
         WebSocketStompClient stompClient = new WebSocketStompClient(new SockJsClient(createTransportClient()));
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
