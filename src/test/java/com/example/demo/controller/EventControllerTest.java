@@ -1,24 +1,23 @@
 package com.example.demo.controller;
 
 import com.example.demo.ReaccomEvent;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.RequestBuilder;
-import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
@@ -35,8 +34,7 @@ import java.util.concurrent.CompletableFuture;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -64,20 +62,23 @@ public class EventControllerTest {
 
     @Test
     public void testGetEndpoint() throws Exception {
-        MvcResult mvcResult = this.mockMvc.perform(get("/event")).andReturn();
+        ReaccomEvent event = new ReaccomEvent();
+        event.setType("FLIGHT_EVENT");
+        event.setKey("FLIGHT");
+        event.setValue("flt1");
+
+        MvcResult mvcResult = this.mockMvc.perform(post("/event")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(event)))
+                .andExpect(ResultMatcher.matchAll())
+                .andReturn();
         assertEquals(200, mvcResult.getResponse().getStatus());
-        assertEquals("hello gary", mvcResult.getResponse().getContentAsString());
 
         WebSocketStompClient stompClient = new WebSocketStompClient(new SockJsClient(createTransportClient()));
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
         StompSession stompSession = stompClient.connect(URL, new StompSessionHandlerAdapter() {
         }).get(1, SECONDS);
-
-        ReaccomEvent event = new ReaccomEvent();
-        event.setType("FLIGHT_EVENT");
-        event.setKey("FLIGHT");
-        event.setValue("flt1");
 
         stompSession.subscribe(EVENT_ENDPOINT, new CreateStompFrameHandler());
         stompSession.send(EVENT_ENDPOINT, event);
@@ -86,11 +87,13 @@ public class EventControllerTest {
         assertNotNull(reaccomEvent);
         System.out.println("Message sent");
     }
+
     private List<Transport> createTransportClient() {
         List<Transport> transports = new ArrayList<>(1);
         transports.add(new WebSocketTransport(new StandardWebSocketClient()));
         return transports;
     }
+
     private class CreateStompFrameHandler implements StompFrameHandler {
         @Override
         public Type getPayloadType(StompHeaders stompHeaders) {
