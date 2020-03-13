@@ -2,6 +2,8 @@ package com.example.demo.controller;
 
 import com.example.demo.ReaccomEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,12 +23,17 @@ import java.util.concurrent.TimeoutException;
 public class EventController {
 
     @Autowired
-    WebSocketController webSocketController;
+    SimpMessagingTemplate simpMessagingTemplate;
 
     @PostMapping("/event")
     public ReaccomEvent getString(@RequestBody ReaccomEvent reaccomEvent) throws InterruptedException, ExecutionException, TimeoutException {
-        webSocketController.sendEvent(reaccomEvent);
+        this.sendEvent(reaccomEvent);
         return reaccomEvent;
+    }
+
+
+    public void sendEvent(ReaccomEvent event){
+        simpMessagingTemplate.convertAndSend("/topic/event/", event);
     }
 
 }

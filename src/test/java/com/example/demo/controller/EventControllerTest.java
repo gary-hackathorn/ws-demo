@@ -57,6 +57,7 @@ public class EventControllerTest {
     public void setup() throws Exception {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
         URL = "ws://localhost:" + port + "/event";
+        System.out.println("URL for WS:"+URL);
         completableFuture = new CompletableFuture<>();
     }
 
@@ -65,14 +66,7 @@ public class EventControllerTest {
         ReaccomEvent event = new ReaccomEvent();
         event.setType("FLIGHT_EVENT");
         event.setKey("FLIGHT");
-        event.setValue("flt1");
-
-        MvcResult mvcResult = this.mockMvc.perform(post("/event")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(new ObjectMapper().writeValueAsString(event)))
-                .andExpect(ResultMatcher.matchAll())
-                .andReturn();
-        assertEquals(200, mvcResult.getResponse().getStatus());
+        event.setValue("fltCancel");
 
         WebSocketStompClient stompClient = new WebSocketStompClient(new SockJsClient(createTransportClient()));
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
@@ -81,7 +75,15 @@ public class EventControllerTest {
         }).get(1, SECONDS);
 
         stompSession.subscribe(EVENT_ENDPOINT, new CreateStompFrameHandler());
-        //stompSession.send(EVENT_ENDPOINT, event);
+
+        MvcResult mvcResult = this.mockMvc.perform(post("/event")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(event)))
+                .andExpect(ResultMatcher.matchAll())
+                .andReturn();
+        assertEquals(200, mvcResult.getResponse().getStatus());
+
+//        stompSession.send(EVENT_ENDPOINT, event);
         ReaccomEvent reaccomEvent = completableFuture.get(10, SECONDS);
         System.out.println(reaccomEvent);
         assertNotNull(reaccomEvent);
